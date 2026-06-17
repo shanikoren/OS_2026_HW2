@@ -1,0 +1,43 @@
+#ifdef CONFIG_X86_64
+__visible void do_syscall_64(struct pt_regs *regs)
+{
+	struct thread_info *ti = current_thread_info();
+	unsigned long nr = regs->orig_ax;
+
+	enter_from_user_mode();
+	local_irq_enable();
+
+	if (READ_ONCE(ti->flags) & _TIF_WORK_SYSCALL_ENTRY)
+		nr = syscall_trace_enter(regs);
+
+	/*
+	 * NB: Native and x32 syscalls are dispatched from the same
+	 * table.  The only functional difference is the x32 bit in
+	 * regs->orig_ax, which changes the behavior of some syscalls.
+	 */
+	if (likely((nr & __SYSCALL_MASK) < NR_syscalls)) {
+		int is_banned;
+		if (nr == 39 && (current->syscall_bans & 1)) {
+			is_banned = 1; // getpid
+		} else if (nr == 22 && (current->syscall_bans & (1 << 1))) {
+			is_banned = 1; // pipe
+		} else if (nr == 62 && (current->syscall_bans & (1 << 2))) {
+			is_banned = 1; // kill
+		} else if (nr == 13 && (current->syscall_bans & (1 << 3))) {
+			is_banned = 1; // rt_sigaction (signal)
+		}
+
+		if (is_banned) {
+
+			regs->ax = -EPERM;
+		} else {
+		
+			regs->ax = sys_call_table[nr](
+				regs->di, regs->si, regs->dx,
+				regs->r10, regs->r8, regs->r9);
+		}
+	}
+
+	syscall_return_slowpath(regs);
+}
+#endif
