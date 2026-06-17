@@ -1,4 +1,18 @@
-getpid() should not be banned initially (0) -> 0
-set_ban(1100) returned: -1 (did you use sudo?)
-test1.exe: test1.cxx:18: int main(): Assertion `x == 0' failed.
-Aborted (core dumped)
+#!/bin/bash
+
+echo "Creating directory structure for HW2 submission..."
+
+# יצירת התיקיות הנדרשות (כולל תיקיות אב)
+mkdir -p kernel
+mkdir -p include/linux
+mkdir -p arch/x86/entry/syscalls
+mkdir -p fs
+
+# יצירת קובץ טקסט ריק למגישים
+if [ ! -f "submitters.txt" ]; then
+    touch submitters.txt
+    echo "Created submitters.txt - Don't forget to add your IDs!"
+fi
+
+echo "✅ Folder structure is ready!"
+echo "Please copy your modified files into their respective directories."
